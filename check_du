@@ -52,11 +52,11 @@ print help message and exit
 
 use strict;
 use warnings;
-use Nagios::Plugin 0.15;
+use Monitoring::Plugin 0.15;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use Pod::Usage;
 
-my $np = Nagios::Plugin->new( shortname => "CHECK_DU" );
+my $np = Monitoring::Plugin->new( shortname => "CHECK_DU" );
 my $warn_threshold = '0:';
 my $crit_threshold = '0:';
 my $what = '';
