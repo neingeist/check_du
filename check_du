@@ -1,0 +1,178 @@
+#!/usr/bin/perl -w
+# ---
+
+=head1 NAME
+
+check_du.pl - Nagios plugin for checking size of directories and files
+
+=head1 SYNOPSIS
+
+ check_du.pl -P path/pattern [-v] \
+             [-w warning_threshold] [-c critical_threshold]
+ check_du.pl [-h|-V]
+
+=head1 OPTIONS
+
+=over 4
+
+=item -P|--path=expression
+
+Path expression for calculating size. May be a shell expression like
+/var/log/*.log
+
+=item -w|--warning=threshold
+
+threshold can be max (warn if < 0 or > max), min:max (warn if < min or >
+max), min: (warn if < min), or @min:max (warn if >= min and <= max). All
+values must be integer.
+
+=item -c|--critical=threshold
+
+see --warning for explanation of threshold format
+
+=item -t|--timeout=seconds
+
+timeout after check_du.pl exits.
+
+=item -v|--verbose
+
+increases verbosity, specify twice to see the original output from sapinfo.
+
+=item -V|--version
+
+print version an exit
+
+=item -h|--help
+
+print help message and exit
+
+=back
+
+=cut
+
+use strict;
+use warnings;
+use Nagios::Plugin 0.15;
+use Getopt::Long qw(:config no_ignore_case bundling);
+use Pod::Usage;
+
+my $np = Nagios::Plugin->new( shortname => "CHECK_DU" );
+my $warn_threshold = '0:';
+my $crit_threshold = '0:';
+my $what = '';
+my $denied = 0;
+my $size = 0;
+my $result = UNKNOWN;
+my $version = 'V1.2/2007-10-21/wob';
+my $printversion = 0;
+my $verbose = 0;
+my $help = 0;
+my $timeout = 10;
+my $debug = 0;
+
+# -- GetOpt
+GetOptions(
+   "P|path=s"           => \$what,
+   "w|warning=s"        => \$warn_threshold,
+   "c|critical=s"       => \$crit_threshold,
+   "t|timeout=s"        => \$timeout,
+   "h|help"             => \$help,
+   "V|version"          => \$printversion,
+   "v|verbose+"         => \$verbose,
+   "d|debug:+"         	=> \$debug,
+) or pod2usage({ -exitval => UNKNOWN,
+                 -verbose => 0,
+                 -msg     => "*** unknown argument found ***" });
+
+pod2usage(-verbose => 2,
+          -exitval => UNKNOWN,
+	  -output  => \*STDOUT,
+         ) if ( $help );
+
+pod2usage(-msg     => "\n$0 -- version: $version\n",
+          -verbose => 0,
+          -exitval => UNKNOWN,
+         ) if ( $printversion );
+
+pod2usage(-msg     => "*** no path/pattern specified ***",
+          -verbose => 0,
+          -exitval => UNKNOWN,
+	) unless $what;
+
+# -- Alarm
+
+$SIG{ALRM} = sub { $np->nagios_die("Timeout reached"); }; 
+alarm($timeout);
+
+# -- thresholds
+$np->set_thresholds( 
+   warning  => $warn_threshold,
+   critical => $crit_threshold);
+
+print "DEBUG: warn= $warn_threshold, crit= $crit_threshold\n" if ($debug);
+
+# -- main
+open ( OUT, "LANG=C /usr/bin/du -cs $what 2>&1 |" ) 
+   or $np->nagios_die( "can't start /usr/bin/du" );
+
+while (<OUT>) {
+   print "$_" if ($verbose);
+   chomp $_;
+   $denied++ if ( /Permission denied/i );
+
+   if ( /^(\d+)\s+total$/i ) {	# last line
+      $size = $1;
+      last;
+   }
+}
+close (OUT);
+
+$np->add_perfdata( label => "size", value => $size, 
+                   uom => "kB", threshold => $np->threshold() );
+
+if ( $denied ) { 
+   $np->nagios_exit( CRITICAL, "unreadable directories or files");
+}
+
+$result = $np->check_threshold(  $size );
+
+alarm(0);
+$np->nagios_exit( $result, "check size: $size kByte");
+
+=head1 AUTHOR
+
+wob (at) swobspace (dot) net
+
+=head1 KNOWN ISSUES
+
+may be
+
+=head1 BUGS
+
+may be
+
+=head1 LICENSE
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; version 2 of the License (and no
+later version).
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+
+=head1 HISTORY
+
+V1.2/2007-10-21 minor bugfixes (thanks to Ralph Grothe)
+
+V1.1/2007-10-07 timeout added
+
+V1.0/2007-01-29 inital version for linux-magazin.de
+
+=cut
