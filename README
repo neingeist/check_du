@@ -1,0 +1,65 @@
+NAME
+    check_du.pl - Nagios plugin for checking size of directories and files
+
+SYNOPSIS
+     check_du.pl -P path/pattern [-v] \
+                 [-w warning_threshold] [-c critical_threshold]
+     check_du.pl [-h|-V]
+
+OPTIONS
+    -P|--path=expression
+        Path expression for calculating size. May be a shell expression like
+        /var/log/*.log
+
+    -w|--warning=threshold
+        threshold can be max (warn if < 0 or > max), min:max (warn if < min
+        or > max), min: (warn if < min), or @min:max (warn if >= min and <=
+        max). All values must be integer.
+
+    -c|--critical=threshold
+        see --warning for explanation of threshold format
+
+    -t|--timeout=seconds
+        timeout after check_du.pl exits.
+
+    -v|--verbose
+        increases verbosity, specify twice to see the original output from
+        sapinfo.
+
+    -V|--version
+        print version an exit
+
+    -h|--help
+        print help message and exit
+
+AUTHOR
+    wob (at) swobspace (dot) net
+
+KNOWN ISSUES
+    may be
+
+BUGS
+    may be
+
+LICENSE
+    This program is free software; you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by the
+    Free Software Foundation; version 2 of the License (and no later
+    version).
+
+    This program is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+    Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+HISTORY
+    V1.2/2007-10-21 minor bugfixes (thanks to Ralph Grothe)
+
+    V1.1/2007-10-07 timeout added
+
+    V1.0/2007-01-29 inital version for linux-magazin.de
+
